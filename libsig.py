@@ -194,6 +194,17 @@ def test_find_depth ():
 	return 1
 #---
 
+def check_decay (isig, depth, curve_length):
+	'''
+	Check that all the levels of the given signature satisfy
+	the bounds predicted by the theory.
+	'''
+	print(f"TO IMPLEMENT")
+	pass
+#---
+
+def test_check_decay():
+	pass
 
 ############################################################################
 ####	Signature: visualization and dimension reduction
@@ -423,7 +434,7 @@ def test_get_qradius():
 ############################################################################
 if __name__ == "__main__":
 	expected = 11
-	success = 1
+	success = 0
 	success += test_my_signature()
 	success += test_get_sig_levels()
 	success += test_factorial()
