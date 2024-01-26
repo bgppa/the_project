@@ -1,0 +1,7 @@
+torch
+pandas==1.5.3
+Historic_Crypto
+signatory
+matplotlib
+scipy
+yfinance
