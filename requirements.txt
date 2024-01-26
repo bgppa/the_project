@@ -5,3 +5,4 @@ signatory
 matplotlib
 scipy
 yfinance
+scikit-learn
