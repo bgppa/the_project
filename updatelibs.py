@@ -6,8 +6,8 @@ libfiles = ['libsig.py', 'libtsm.py']
 folder_dict = {}
 
 # Manually set the folders for each file
-folder_dict['libsig.py'] = ['gmc/']
-folder_dict['libtsm.py'] = ['gmc/']
+folder_dict['libsig.py'] = ['../gmc/']
+folder_dict['libtsm.py'] = ['../gmc/']
 
 
 # Print a confirm message
