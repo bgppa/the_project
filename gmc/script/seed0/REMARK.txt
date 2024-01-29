@@ -1,0 +1,7 @@
+We reported in the plots the overall accuracy on the full dataset,
+	but in all the examples the training and the validation accuracy were
+	always very close.
+
+The plots are helpful for the visualization, fur our human eye.
+	But the actual computations for the clustering are directly done
+	on the higher dimensional space where the signature lives.

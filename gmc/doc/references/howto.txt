@@ -1,0 +1,8 @@
+Dopo aver scritto \cite{nomekey}, la citazione compare SOLO nel main
+e NON nei sottofile, e SOLO dopo avere eseguito:
+
+    pdflatex main
+    bibtex main
+    pdflatex main
+    pdflatex main
+
