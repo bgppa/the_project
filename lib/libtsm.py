@@ -4,11 +4,28 @@ before applying on them the signature transform.
 We have functions like log-return transforms, timestamp augmentation
 and zero-start injection.
 
+INFORMATION:
+a "flexible_time_series" is a tensor that can be of maximum shape 3.
+
+IF the input is of shape (a, b, c), is interpreted as:
+a = number of time series
+b = number of time observations for each time series
+c = amount of numbers registered for each observation
+Basicall is a batch of multidimensional time series.
+
+IF a tensor of dimension 2 is given, written as (x, y), it is interpreted as:
+x = number of time points
+y = amount of numbers registered for each observation
+In other words, it is a time series of length x in dimension y
+
+IF a tensor of dimension 1 or 0 is given, it is interpreted
+as a one-dimensional time series composed by the given values.
 
 LIST OF USER FUNCTIONS:
-augment
-add_zero
-get_1var
+[see above for the definition of "flexible_time_series"]
+augment 		(flexible_time_series)
+add_zero		(flexible_time_series)
+get_1var		(flexible_time_series)
 '''
 import torch
 

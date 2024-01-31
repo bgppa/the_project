@@ -1,7 +1,26 @@
 '''
 This library included all the utilities for working with the signature
-	and visualizing the corresponding results.
+and visualizing the corresponding results.
+
+# COMPUTATION AND ERROR MANAGEMENT
+my_signature 			(many_time_seris, depth)
+truncation_err			(depth, curve_len)
+depth_given_error		(curve_len, desired_err)
+sig_norm			(one_signature, curve_dim, depth)
+check_level_bounds		(one_signature, curve_dim, depth, curve_len)
+
+# VISUALIZATION
+plot_signature			(one_signature, curve_dim, depth)
+
+# PROJECTION IN DIMENSION 2
+sigdist_fullmtx			(many_signatures, curve_dim, depth)
+sigs_to_dimtwo			(many_signatures, curve_dim, depth)
+eucdist_fullmtx			(many_points)
+eucpoints_to_dimtwo		(many_points)
+gram_eigs			(many_points)
+get_qradius			(many_points, quantile = 0.95)
 '''
+
 import torch
 import signatory as sg
 import matplotlib.pyplot as plt
@@ -15,15 +34,15 @@ from sklearn.manifold import MDS
 ####	Signature: computation, error estimation, norms
 ###########################################################################
 
-def my_signature(database, depth):
+def my_signature(many_time_series, depth):
 	'''
 	Wrap the signatory signature function so to add a possible
 	customization.
 	'''
-	if (len(database.shape) == 2):
-		my_database = database.unsqueeze(0)
-	elif (len(database.shape) == 3):
-		my_database = database
+	if (len(many_time_series.shape) == 2):
+		my_database = many_time_series.unsqueeze(0)
+	elif (len(many_time_series.shape) == 3):
+		my_database = many_time_series
 	else:
 		input(f"ERR: my_signature: invalid size for the database")
 		return 0.
@@ -99,14 +118,14 @@ def test_factorial():
 	return 1
 #---
 
-def sig_err (depth, curve_len):
+def truncation_err (depth, curve_len):
 	'''
 	Estimate the Signature TRUNCATION ERROR when working with a curve
 	of certain 1-variation (curve_len).
 	Assume to truncate until depth, included.
 	'''
 	if (depth < 0 or curve_len < 0):
-		input(f"ERR: sig_err: invalid parameters. Returning 0.")
+		input(f"ERR: truncation_err: invalid parameters. Returning 0.")
 		return 0
 	sm = 0.
 	for nth in range(depth + 1):
@@ -115,24 +134,24 @@ def sig_err (depth, curve_len):
 	return torch.exp(torch.tensor(curve_len)) - sm
 #---
 
-def test_sig_err():
+def test_truncation_err():
 	'''
 	Testing on values analytical predictable.
 	'''
-	e1 = sig_err(0, 1)
+	e1 = truncation_err(0, 1)
 	assert torch.abs(e1 - torch.e + 1.) < 1e-6
-	e2 = sig_err(1, 2)
+	e2 = truncation_err(1, 2)
 	assert (e2 <= (torch.e ** 2. - 2.))
 	return 1
 #---
 
-def sig_norm (input_signature, curve_dim, depth):
+def sig_norm (one_signature, curve_dim, depth):
 	'''
 	Compute the TENSOR NORM of a signature, obtained by summing the
 	euclidean norms of each level composing it.
 	'''
 	levels = get_sig_levels(curve_dim, depth)
-	the_sig = input_signature.reshape(-1)
+	the_sig = one_signature.reshape(-1)
 	tot_norm = 0.
 	for nth in range(depth):
 		curr_lvl = nth + 1
@@ -163,7 +182,7 @@ def test_sig_norm ():
 #---
 
 
-def find_depth (curve_len, desired_err):
+def depth_given_error (curve_len, desired_err):
 	'''
 	Check how much should I truncate to reach some desired error.
 	'''
@@ -177,7 +196,7 @@ def find_depth (curve_len, desired_err):
 	print(f"(Starting error: {initial_err :.3f})")
 	while (curr_err > desired_err) and (count < max_iter):
 		count += 1
-		curr_err = sig_err (count, curve_len)
+		curr_err = truncation_err (count, curve_len)
 		print(f"(Depth {count} produces error {curr_err :.3f})")
 	if count >= max_iter:
 		print(f"Desired error too small!")
@@ -186,16 +205,16 @@ def find_depth (curve_len, desired_err):
 	return count
 #---
 
-def test_find_depth ():
+def test_depth_given_error ():
 	random_values = torch.randint(8, (10, 2)) + 1
 	for (curve_len, og_depth) in random_values:
-		desired_err = sig_err(og_depth, curve_len)
-		suggested_depth = find_depth(curve_len, desired_err)
+		desired_err = truncation_err(og_depth, curve_len)
+		suggested_depth = depth_given_error(curve_len, desired_err)
 		assert (og_depth == suggested_depth)
 	return 1
 #---
 
-def check_bounds (isig, depth, curve_dim, curve_length):
+def check_level_bounds (isig, curve_dim, depth, curve_len):
 	'''
 	Check that all the levels of the given signature satisfy
 	the bounds predicted by the theory.
@@ -204,7 +223,7 @@ def check_bounds (isig, depth, curve_dim, curve_length):
 	the_sig = isig.reshape(-1)
 	for nth in range(depth):
 		curr = torch.norm(the_sig[levels[nth][0]:levels[nth][1]])
-		theoretical = (curve_length ** (nth+1)) / factorial(nth+1)
+		theoretical = (curve_len ** (nth+1)) / factorial(nth+1)
 		if curr <= theoretical:
 			print(f"(lvl {nth+1} {curr} < {theoretical})")
 		else:
@@ -214,13 +233,13 @@ def check_bounds (isig, depth, curve_dim, curve_length):
 	return 1
 #---
 
-def test_check_bounds():
+def test_check_level_bounds():
 	dim = 3
 	depth = 8
 	tmp = torch.normal(0., 1., (10, dim))
 	s = my_signature(tmp, depth)
 	curve_len = libtsm.get_1var(tmp)
-	check_bounds(s, depth, dim, curve_len)
+	check_level_bounds(s, dim, depth, curve_len)
 	return 1
 #---
 	
@@ -229,13 +248,13 @@ def test_check_bounds():
 ####	Signature: visualization and dimension reduction
 ############################################################################
 
-def plot_signature (input_signature, curve_dim, depth):
+def plot_signature (one_signature, curve_dim, depth):
 	'''
 	We produce a more elaborated plot of the signature,
 	including the decay of level norms and every sig level.
 	'''
 	levels = get_sig_levels (curve_dim, depth)
-	the_sig = input_signature.reshape(-1)
+	the_sig = one_signature.reshape(-1)
 	for nth in range(depth):
 		curr_lvl = nth + 1
 		vals = the_sig[levels[nth][0]:levels[nth][1]]
@@ -258,14 +277,14 @@ def test_plot_signature():
 	return 1
 #---
 
-def sigdist_fullmtx(idata, curve_dim, depth):
+def sigdist_fullmtx(many_signatures, curve_dim, depth):
 	'''
 	Get the FULL distance matrix for a set of signatures,
 	given in input as idata (input data).
 	Norms are TENSOR NORMS.
 	'''
-	assert (len(idata.shape) == 2)
-	n_points = idata.shape[0]
+	assert (len(many_signatures.shape) == 2)
+	n_points = many_signatures.shape[0]
 	# if a single point is given, the distance matrix is simply zero
 	if n_points == 1:
 		return 0.
@@ -274,7 +293,7 @@ def sigdist_fullmtx(idata, curve_dim, depth):
 	counter = 0
 	for i in range(n_points):
 		for j in range(n_points):
-			pt = idata[i] - idata[j]
+			pt = many_signatures[i] - many_signatures[j]
 			matrix[i][j] = sig_norm(pt, curve_dim, depth)
 	return matrix
 #---
@@ -303,7 +322,7 @@ def sigdist_udmtx(idata, curve_dim, depth):
 	return upper_matrix
 #---
 
-def test_sigdist_matrix():
+def test_sigdist_fullmtx():
 	curve_dim = 5
 	depth = 6
 	for k in range(10):
@@ -322,13 +341,13 @@ def test_sigdist_matrix():
 	return 1
 #---	
 
-def eucldist_fullmtx(idata):
+def eucdist_fullmtx(many_points):
 	'''
 	Get the FULL distance matrix for a set of data,
 	measured in the ordinary Euclidean norm.
 	'''
-	assert (len(idata.shape) == 2)
-	n_points = idata.shape[0]
+	assert (len(many_points.shape) == 2)
+	n_points = many_points.shape[0]
 	# if a single point is given, the distance matrix is simply zero
 	if n_points == 1:
 		return 0.
@@ -337,29 +356,60 @@ def eucldist_fullmtx(idata):
 	counter = 0
 	for i in range(n_points):
 		for j in range(n_points):
-			pt = idata[i] - idata[j]
+			pt = many_points[i] - many_points[j]
 			matrix[i][j] = torch.norm(pt)
 	return matrix
 #---
 
-def test_eucldist_fullmtx():
+def test_eucdist_fullmtx():
 	# Generate datasets of equal points
 	x = torch.ones((100, 4))
 	# The distance matrix must be just zero
-	assert (torch.norm(eucldist_fullmtx(x)) < 1e-6)
+	assert (torch.norm(eucdist_fullmtx(x)) < 1e-6)
 	return 1
 #---
 
-def sigs_to_dimtwo (input_sigs, curve_dim, depth):
+
+def gram_eigs (many_points):
+	'''
+	Returns the EIGENVALUES of the Gram Matrix for a set of points
+	considered wrt the Euclidean Scalar Product.
+	'''
+	assert (len(many_points.shape) == 2)
+	n_samples = many_points.shape[0]
+	gram_matrix = torch.zeros(n_samples, n_samples)
+	for i in range(n_samples):
+		for j in range(n_samples):
+			tmp = torch.dot(many_points[i], many_points[j])
+			gram_matrix[i][j] = tmp
+
+	eigenvalues = torch.linalg.eig(gram_matrix)[0]
+	tmp = torch.view_as_real(eigenvalues)
+	real_part = tmp[:, 0]
+	img_part = tmp[:, 1]
+	return (real_part, img_part)
+#---
+
+
+def test_gram_eigs ():
+	data = torch.eye(5)
+	should_one, should_zero = gram_eigs(data)
+	assert (torch.norm(torch.ones(5) - should_one)) < 1e-6
+	assert (torch.norm(should_zero) < 1e-6)
+	return 1
+#---
+	
+
+def sigs_to_dimtwo (many_signatures, curve_dim, depth):
 	'''
 	Given some SIGNATURES in input, convert them
 	isometrically in dimension 2.
 	'''
-	assert (len(input_sigs.shape) == 2)
-	n_samples = input_sigs.shape[0]
-	m = input_sigs.shape[1]
+	assert (len(many_signatures.shape) == 2)
+	n_samples = many_signatures.shape[0]
+	m = many_signatures.shape[1]
 	# Center the data
-	tmp = input_sigs.clone().detach()
+	tmp = many_signatures.clone().detach()
 	avg = torch.mean(tmp, dim=0)
 	x_data = tmp - avg
 	# Compute the distance matrix, before transform
@@ -370,7 +420,7 @@ def sigs_to_dimtwo (input_sigs, curve_dim, depth):
 	tmp_transformed = embedding.fit_transform(start_geometry.numpy())
 	x_transformed = torch.from_numpy(tmp_transformed)
 	# Compute the distance matrix, after the transform
-	end_geometry = eucldist_fullmtx(x_transformed)
+	end_geometry = eucdist_fullmtx(x_transformed)
 	# (comparing them says about the reliability of the 2d data)
 	start_norm = torch.norm(start_geometry)
 	end_norm = torch.norm(end_geometry)
@@ -401,18 +451,52 @@ def test_sigs_to_dimtwo():
 	return 1
 #---	
 
-def get_qradius (input_data, quantile = 0.95):
+def eucpoints_to_dimtwo (many_points):
+	'''
+	Given some EUCLIDEAN points ini input,
+	convert them isometrically in dimension 2.
+	'''
+	assert (len(many_points.shape) == 2)
+	n_samples = many_points.shape[0]
+	m = many_points.shape[1]
+	# Center the data
+	tmp = many_points.clone().detach()
+	avg = torch.mean(tmp, dim=0)
+	x_data = tmp - avg
+	# Compute the distance matrix, before transform
+	start_geometry = eucdist_fullmtx(x_data)
+	# Transform data using Multidimensional Scaler
+	embedding = MDS(n_components=2, normalized_stress="auto",
+						dissimilarity="precomputed")
+	tmp_transformed = embedding.fit_transform(start_geometry.numpy())
+	x_transformed = torch.from_numpy(tmp_transformed)
+	# Compute the distance matrix, after the transform
+	end_geometry = eucdist_fullmtx(x_transformed)
+	# (comparing them says about the reliability of the 2d data)
+	start_norm = torch.norm(start_geometry)
+	end_norm = torch.norm(end_geometry)
+	tmp_err = torch.abs(end_norm - start_norm) * 100.
+	rel_err = tmp_err / torch.abs(start_norm)
+	print(f"(norms: {start_norm:.3e} -> {end_norm:.3e})")
+	print(f"(rel err: {rel_err:.2f}%)")
+	abs_err = torch.norm(start_geometry-end_geometry)/math.sqrt(n_samples)
+	print(f"(sqrt(mse) err: {abs_err : .3e})")
+	return x_transformed, rel_err
+#---
+
+
+def get_qradius (many_points, quantile = 0.95):
 	'''
 	Given multiple multidimensional points, centered,
 	compute the minimal radius capable of containing quantile% of them.
 	'''
 	# Verify correct dimensionality, (n_samples, m)
 	assert (quantile > 0 and quantile <= 1)
-	assert (len(input_data.shape) == 2)
-	n_samples = input_data.shape[0]
-	m = input_data.shape[1]
+	assert (len(many_points.shape) == 2)
+	n_samples = many_points.shape[0]
+	m = many_points.shape[1]
 	# Center the data
-	tmp = input_data.clone().detach()
+	tmp = many_points.clone().detach()
 	avg = torch.mean(tmp, dim=0)
 	x_data = tmp - avg
 	# Store all the norms: the radius will be selected among them
@@ -454,18 +538,19 @@ def test_get_qradius():
 ####	Just the main part now, to run all possible tests
 ############################################################################
 if __name__ == "__main__":
-	expected = 12
+	expected = 13
 	success = 0
 	success += test_my_signature()
 	success += test_get_sig_levels()
 	success += test_factorial()
-	success += test_sig_err()
-	success += test_find_depth()
+	success += test_truncation_err()
+	success += test_depth_given_error()
 	success += test_sig_norm()
-	success += test_check_bounds()
+	success += test_check_level_bounds()
 	success += test_plot_signature()
-	success += test_sigdist_matrix()
-	success += test_eucldist_fullmtx()
+	success += test_sigdist_fullmtx()
+	success += test_eucdist_fullmtx()
+	success += test_gram_eigs()
 	success += test_sigs_to_dimtwo()
 	success += test_get_qradius()
 

@@ -28,5 +28,6 @@ if user_answer == 'y':
             os.system(cmd)
             print(f'{lib} copied into {folder}')
     print('Done.')
+    print('DO NOT FORGET TO UPDATE WITH GIT')
 else:
     print('Aborting.')
