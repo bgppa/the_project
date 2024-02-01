@@ -22,11 +22,12 @@ def mix_and_split(full_x, full_y):
 	y_train = full_y[train_indeces]
 	x_val = full_x[val_indeces]
 	y_val = full_y[val_indeces]
-	return (x_train, y_train, x_val, y_val)
+	return (x_train, y_train, x_val, y_val, train_indeces, val_indeces)
 #---
 
 
-def linear_classifier (x_train, y_train, x_val, y_val):
+def linear_classifier (x_train, y_train, x_val, y_val, tot_epochs = 10_000,
+		lr = 1e-3):
 	'''
 	ADD INFORMATION HERE
 	'''
@@ -34,14 +35,12 @@ def linear_classifier (x_train, y_train, x_val, y_val):
 	assert (len(x_train.shape) == 2)
 	dim_samples = x_train.shape[1]
 	model = nn.Sequential(nn.Linear(dim_samples, 2))
-	lr = 1e-3
 	optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 	loss_fn = nn.CrossEntropyLoss()
-	tot_epochs = 10_000
 
 	# Keep track of loss on training and validation data
-	lt_hist = torch.zeros(epochs)
-	lv_hist = torch.zeros(epochs)
+	lt_hist = torch.zeros(tot_epochs)
+	lv_hist = torch.zeros(tot_epochs)
 	# Train the model
 	for nth in range(tot_epochs):
 		optimizer.zero_grad()
@@ -52,7 +51,7 @@ def linear_classifier (x_train, y_train, x_val, y_val):
 			val_loss = loss_fn(val_pred, y_val)
 			lv_hist[nth] = val_loss.item()
 			lt_hist[nth] = loss.item()
-			print(f"{nth+1}/{epochs} t:{loss.item():.3e}")
+			print(f"{nth+1}/{tot_epochs} t:{loss.item():.3e}")
 			print(f"\t\tv:{val_loss.item():.3e}")
 		loss.backward()
 		optimizer.step()

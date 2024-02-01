@@ -131,7 +131,10 @@ def truncation_err (depth, curve_len):
 	for nth in range(depth + 1):
 		# nth from 0 to depth, included
 		sm += (curve_len ** nth) / factorial(nth)
-	return torch.exp(torch.tensor(curve_len)) - sm
+	max_error = torch.exp(curve_len)
+	result = torch.exp(curve_len) - sm
+	print(f"Truncation error: from {max_error:.2f} to {result:.2f}")
+	return result
 #---
 
 def test_truncation_err():
@@ -260,12 +263,12 @@ def plot_signature (one_signature, curve_dim, depth):
 		vals = the_sig[levels[nth][0]:levels[nth][1]]
 		curr_norm = torch.norm(vals)
 		x_coordinate = levels[nth][1]-1
-		plt.axvline(x=x_coordinate, color="teal",linestyle="dashdot",
+		plt.axvline(x=x_coordinate, color="orange",linestyle="dashdot",
 		label=f"[lv{curr_lvl} {curr_norm:.1e}]")
 	plt.legend()
-	plt.plot(the_sig, color="orange")
+	plt.plot(the_sig, color="blue")
 	plt.grid()
-	plt.title(f"Signature until level {depth}")
+	plt.title(f"Signature coefficient until level {depth}")
 	plt.show()
 	return 1
 #---
