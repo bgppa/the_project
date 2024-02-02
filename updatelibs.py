@@ -6,9 +6,9 @@ libfiles = ['libsig.py', 'libtsm.py', 'libmdl.py']
 folder_dict = {}
 
 # Manually set the folders for each file
-folder_dict['libsig.py'] = ['../gmc/']
-folder_dict['libtsm.py'] = ['../gmc/']
-folder_dict['libmdl.py'] = ['../gmc/']
+folder_dict['libsig.py'] = ['../gmc/', '../up_or_down/']
+folder_dict['libtsm.py'] = ['../gmc/', '../up_or_down/']
+folder_dict['libmdl.py'] = ['../gmc/', '../up_or_down/']
 
 
 # Print a confirm message
