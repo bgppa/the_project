@@ -7,6 +7,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from libtsm import is_onedim
 
 
 def mix_and_split(full_x, full_y):
@@ -203,7 +204,7 @@ def isdecreasing(sequence):
 	'''
 	Returns 1 if the sequence is strictly decreasing
 	'''
-	if isonedim(sequence):
+	if is_onedim(sequence):
 		sequence = sequence.reshape(-1)
 		for nth in range(1, len(sequence)):
 			if sequence[nth - 1] <= sequence[nth]:

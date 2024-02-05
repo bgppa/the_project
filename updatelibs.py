@@ -25,7 +25,7 @@ for lib in libfiles:
         print(f'\t{folder}')
 
 user_answer = input('Are you sure to proceed? (type y for yes)')
-if user_answer == 'y':
+if user_answer[0].upper() == 'Y':
     # for each file, copy it in the corresponding folders
     for lib in libfiles:
         for folder in folder_dict[lib]:
