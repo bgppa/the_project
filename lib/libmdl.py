@@ -96,3 +96,132 @@ def accuracy(y1_arg, y2_arg):
 	return (acc * 100.).item()
 #---
 
+##########################################################################
+####	THE FOLLOWING SECTION MUST BE CHECKED AGAIN
+##########################################################################
+
+def linear_training(dim, e_units, x_train, y_train, x_val, y_val, lr):
+	'''
+	This is a classic training routine for Pytorch, in our case we are fine
+	with a simple linear model, mseloss and a learning rate as parameter.
+	'''
+	print("Starting training...")	
+	model = nn.Linear(dim, 1, bias = False)
+	optimizer = optim.Adam(model.parameters(), lr=lr)
+	loss_fn = nn.MSELoss()
+	# I will check that the losses are following a decreasing behavior
+	monitor_size = 5
+	last_losses = torch.zeros(monitor_size)
+	# Monitoring the loss evolution during training
+	n_epochs = 10_000 * e_units
+	hist_loss_train = torch.ones(n_epochs)
+	hist_loss_val = torch.ones(n_epochs)
+	# Classic training loop
+	for nth in range(n_epochs):
+		optimizer.zero_grad()
+		y_train_pred = model(x_train)
+		loss_train = loss_fn(y_train_pred, y_train)
+		with torch.no_grad():
+			y_val_pred = model(x_val)
+			loss_val = loss_fn(y_val_pred, y_val)
+			if (nth % 1000 == 0):
+				print(f"{nth+1}/{n_epochs}")
+				print(f"t: {loss_train.item():.3e} ", end=' ')
+				print(f"v:{loss_val.item():.3e}")
+			hist_loss_train[nth] = loss_train.item()
+			hist_loss_val[nth] = loss_val.item()
+			if nth < monitor_size:
+				last_losses[nth] = loss_val.item()
+			else:
+				tmp = torch.zeros(monitor_size)
+				tmp[:-1] = last_losses[1:]
+				tmp[-1] = loss_val.item()
+				last_losses = tmp
+			if (nth > 0) and (nth % 1000 == 0):
+		#		print("CHECKING")
+		#		print(last_losses)
+				if not isdecreasing(last_losses):
+					print("Last monitored losses: ")
+					print(last_losses)
+					ch = input("Stop straining?")
+					if len(ch) > 0:
+						ch = ch.upper()[0]
+						print(f"{ch.upper()}")
+						if ch == 'Y':
+							break
+			loss_train.backward()
+			optimizer.step()
+			
+	# endfor
+	print(f"Training ended!")
+	plt.plot(hist_loss_train[1000:nth], label='train')
+	plt.plot(hist_loss_val[1000:nth], label='val')
+	plt.grid()
+	plt.legend()
+	plt.title("Loss function evolution")
+	plt.show()
+
+	coefficients = list(model.parameters())[0][0].detach()
+	plt.plot(range(1, dim+1), coefficients)
+	plt.axhline(y=0, color="black", linestyle="dashdot")
+	plt.grid()
+	plt.title(f"The {dim} parameters of the linear model")
+	plt.show()
+
+	return model
+#---
+
+
+def diagonal_test (x_train, y_train, x_val, y_val, model):
+	'''
+	Plot true values VS predicted one in a diagonal shape easy to read.
+	'''
+	train_pred = model(x_train).detach()
+	val_pred = model(x_val).detach()
+
+	y_min1 = torch.min(train_pred)
+	y_min2 = torch.min(val_pred)
+	y_min = torch.min(y_min1, y_min2)
+
+	y_max1 = torch.max(train_pred)
+	y_max2 = torch.max(val_pred)
+	y_max = torch.max(y_max1, y_max2)
+
+	plt.scatter(y_train, train_pred[:, 0], color="blue", label="train")
+	plt.scatter(y_val, val_pred[:, 0], color="red", label="val")
+	plt.plot(torch.linspace(y_min, y_max, 10),
+			torch.linspace(y_min, y_max, 10),
+			label="diagonal target",
+			linestyle="dashed", color="green")
+	plt.title("Diagonal test")
+	plt.legend()
+	plt.grid()
+	plt.show()
+#---
+
+def isdecreasing(sequence):
+	'''
+	Returns 1 if the sequence is strictly decreasing
+	'''
+	if isonedim(sequence):
+		sequence = sequence.reshape(-1)
+		for nth in range(1, len(sequence)):
+			if sequence[nth - 1] <= sequence[nth]:
+				return 0
+		return 1
+	else:
+		print(f"isdecreasing: not a onedime sequence!")
+		return manage_error()
+#-------
+
+def test_isdecreasing():
+	a = torch.ones(10)
+	assert(isdecreasing(a) == 0)
+	b = torch.tensor([0., 1., 2., 10])
+	assert(isdecreasing(b) == 0)
+	c = torch.tensor([1., -1., 10, 2])
+	assert(isdecreasing(c) == 0)
+	d = torch.tensor([10., 5., 1])
+	assert(isdecreasing(d) == 1)
+	return 1
+#-------
