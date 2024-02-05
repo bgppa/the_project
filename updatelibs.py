@@ -7,13 +7,13 @@ folder_dict = {}
 
 # Manually set the folders for each file
 folder_dict['libsig.py'] = ['../gmc/', '../up_or_down/']
-folder_dict['libsig.py'].append('../generative_simpletrain/')
+folder_dict['libsig.py'].append('../revised_sigwizard/')
 
 folder_dict['libtsm.py'] = ['../gmc/', '../up_or_down/']
-folder_dict['libtsm.py'].append('../generative_simpletrain/')
+folder_dict['libtsm.py'].append('../revised_sigwizard/')
 
 folder_dict['libmdl.py'] = ['../gmc/', '../up_or_down/']
-folder_dict['libmdl.py'].append('../generative_simpletrain/')
+folder_dict['libmdl.py'].append('../revised_sigwizard/')
 
 
 # Print a confirm message
