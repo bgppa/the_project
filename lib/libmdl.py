@@ -35,7 +35,8 @@ def linear_classifier (x_train, y_train, x_val, y_val, tot_epochs = 10_000,
 	# simple linear regression
 	assert (len(x_train.shape) == 2)
 	dim_samples = x_train.shape[1]
-	model = nn.Sequential(nn.Linear(dim_samples, 2))
+#	model = nn.Sequential(nn.Linear(dim_samples, 2))
+	model = nn.Linear(dim_samples, 2, bias = False)
 	optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 	loss_fn = nn.CrossEntropyLoss()
 

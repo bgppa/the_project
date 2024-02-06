@@ -251,7 +251,7 @@ def test_check_level_bounds():
 ####	Signature: visualization and dimension reduction
 ############################################################################
 
-def plot_signature (one_signature, curve_dim, depth):
+def plot_signature (one_signature, curve_dim, depth, legend = True):
 	'''
 	We produce a more elaborated plot of the signature,
 	including the decay of level norms and every sig level.
@@ -265,7 +265,8 @@ def plot_signature (one_signature, curve_dim, depth):
 		x_coordinate = levels[nth][1]-1
 		plt.axvline(x=x_coordinate, color="orange",linestyle="dashdot",
 		label=f"[lv{curr_lvl} {curr_norm:.1e}]")
-	plt.legend()
+	if legend:
+		plt.legend()
 	plt.plot(the_sig, color="blue")
 	plt.grid()
 	plt.title(f"Signature coefficient until level {depth}")
