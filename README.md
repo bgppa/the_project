@@ -1,14 +1,12 @@
-Hello people,
+Dear reader,
 
-I am collecting here some ideas concerning the use of the Signature Transform
-in the context of Time Series Analysis.
+this is a partial repository when I am collecting some ideas concerning
+the analysis of time series.
+Some of them are part of a work-in-progress research paper,
+therefore kept in a private fork.
 
-At the moment, my idea is to simply collect two packages capable of offering
-support for two tasks:
-1) Time Series Manipulation, in order to prepare data...
-2) Signature Tools, to be used on the preprocessed data.
+As soon as they are (hopefully) published, I make the corresponding
+repositories public and provide the appropriate documentation.
 
-I am writing this code for me, but I will always try to be as clear as possible.
-We will see :-)
-
-Have a nice day
+Thanks for your ineterest and have a nice day
+bgppa
