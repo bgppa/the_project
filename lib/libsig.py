@@ -3,11 +3,12 @@ This library included all the utilities for working with the signature
 and visualizing the corresponding results.
 
 # COMPUTATION AND ERROR MANAGEMENT
-my_signature 			(many_time_seris, depth)
+my_signature 			(many_time_series, depth)
 truncation_err			(depth, curve_len)
 depth_given_error		(curve_len, desired_err)
 sig_norm			(one_signature, curve_dim, depth)
 check_level_bounds		(one_signature, curve_dim, depth, curve_len)
+empirical_truncation_err	(one_time_series, target_depth, desired_err)
 
 # VISUALIZATION
 plot_signature			(one_signature, curve_dim, depth)
@@ -131,9 +132,9 @@ def truncation_err (depth, curve_len):
 	for nth in range(depth + 1):
 		# nth from 0 to depth, included
 		sm += (curve_len ** nth) / factorial(nth)
-	max_error = torch.exp(curve_len)
+	max_error = torch.exp(curve_len).item()
 	result = torch.exp(curve_len) - sm
-	print(f"Truncation error: from {max_error:.2f} to {result:.2f}")
+	print(f"Truncation error: from {max_error:.2f} to {result.item():.2f}")
 	return result
 #---
 
@@ -141,12 +142,60 @@ def test_truncation_err():
 	'''
 	Testing on values analytical predictable.
 	'''
-	e1 = truncation_err(0, 1)
+	e1 = truncation_err(0, torch.tensor([1]))
 	assert torch.abs(e1 - torch.e + 1.) < 1e-6
-	e2 = truncation_err(1, 2)
+	e2 = truncation_err(1, torch.tensor([2]))
 	assert (e2 <= (torch.e ** 2. - 2.))
 	return 1
 #---
+
+
+def empirical_truncation_err (my_curve, chosen_depth=4, desired_err=1.):
+	'''
+	Given a multidimensional path perform a rough estimation 
+	of the decay of its signature error.
+	We compute the signature at depth SUP and store (the norm of)
+	this value as reference. Then, we compute the signatures at each level
+	until SUP, and compare (their norms) with the reference value. 
+	'''
+	assert (len(my_curve.shape) == 2)
+	SUP = 12
+	assert(chosen_depth < SUP)
+	assert(chosen_depth >= 1)
+	print("Computing empirical error behavior...")
+	ref = torch.norm(sg.signature(my_curve.unsqueeze(0), depth=SUP))
+	rel_errs = torch.zeros(SUP - 1)
+	for nth in range(1, SUP):
+		tmp = sg.signature(my_curve.unsqueeze(0), depth=nth)
+		tmp2 = torch.norm(tmp)
+		rel_errs[nth-1] = torch.abs(tmp2 - ref) * 100. / ref
+	plt.plot(range(1, SUP), rel_errs, color = "blue")
+	if (rel_errs[chosen_depth - 1] <= desired_err):
+		result = 1
+		myclr = "green"
+		print(f"Desired relative error is reached")
+	else:
+		result = 0
+		myclr = "red"
+		print(f"Target error NOT reached")	
+	plt.scatter(chosen_depth, rel_errs[chosen_depth - 1], color=myclr)
+	plt.axhline(y=rel_errs[chosen_depth-1],color=myclr,linestyle="dotted")
+	plt.grid()
+	plt.xlabel("Signature truncation level")
+	plt.ylabel("% relative error")
+	plt.title("Empirical truncation error")
+	plt.show()
+	return result
+#---
+
+
+def test_empirical_truncation_err ():
+	curve = torch.normal(0., 5., (20, 2))
+	res1 = empirical_truncation_err(curve, 2, 1.)
+	res2 = empirical_truncation_err(curve / 20)
+	return 1
+#---
+
 
 def sig_norm (one_signature, curve_dim, depth):
 	'''
@@ -544,7 +593,7 @@ def test_get_qradius():
 ####	Just the main part now, to run all possible tests
 ############################################################################
 if __name__ == "__main__":
-	expected = 13
+	expected = 14
 	success = 0
 	success += test_my_signature()
 	success += test_get_sig_levels()
@@ -559,5 +608,6 @@ if __name__ == "__main__":
 	success += test_gram_eigs()
 	success += test_sigs_to_dimtwo()
 	success += test_get_qradius()
+	success += test_empirical_truncation_err()
 
 	print(f"PASSED: {success}/{expected}")
