@@ -258,6 +258,7 @@ def plot_signature (one_signature, curve_dim, depth, legend = True):
 	'''
 	levels = get_sig_levels (curve_dim, depth)
 	the_sig = one_signature.reshape(-1)
+	len_sig = len(the_sig)
 	for nth in range(depth):
 		curr_lvl = nth + 1
 		vals = the_sig[levels[nth][0]:levels[nth][1]]
@@ -267,7 +268,8 @@ def plot_signature (one_signature, curve_dim, depth, legend = True):
 		label=f"[lv{curr_lvl} {curr_norm:.1e}]")
 	if legend:
 		plt.legend()
-	plt.plot(the_sig, color="blue")
+	plt.scatter(range(1, len_sig + 1), the_sig, color="blue")
+	plt.plot(range(1,len_sig+1),the_sig,color="blue", linestyle="dotted")
 	plt.grid()
 	plt.title(f"Signature coefficient until level {depth}")
 	plt.show()
