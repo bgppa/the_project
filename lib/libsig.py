@@ -312,7 +312,7 @@ def plot_signature (one_signature, curve_dim, depth, legend = True):
 		curr_lvl = nth + 1
 		vals = the_sig[levels[nth][0]:levels[nth][1]]
 		curr_norm = torch.norm(vals)
-		x_coordinate = levels[nth][1]-1
+		x_coordinate = levels[nth][0] + 1
 		plt.axvline(x=x_coordinate, color="orange",linestyle="dashdot",
 		label=f"[lv{curr_lvl} {curr_norm:.1e}]")
 	if legend:
